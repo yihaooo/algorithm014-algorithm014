@@ -1,0 +1,34 @@
+1.迭代法
+class Solution {
+    public List<Integer> res = new ArrayList<Integer>();
+    public LinkedList<TreeNode> stack = new LinkedList<TreeNode>();
+    public List<Integer> inorderTraversal(TreeNode root) {
+            if(root == null){
+                return res;
+            }
+            TreeNode cur = root;
+            while(!stack.isEmpty() || cur!=null){
+                while(cur!=null){
+                    stack.push(cur);
+                    cur = cur.left;
+                }
+                TreeNode temp = stack.pop();
+                res.add(temp.val);
+                cur = temp.right;
+            }
+            return res;
+    }
+}
+
+2.递归法
+class Solution {
+    public List<Integer> res = new ArrayList<Integer>();
+    public List<Integer> inorderTraversal(TreeNode root) {
+         if(root!=null){
+             inorderTraversal(root.left);
+            res.add(root.val);
+            inorderTraversal(root.right);
+         }
+         return res;
+    }
+}
