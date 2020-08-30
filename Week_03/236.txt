@@ -1,0 +1,227 @@
+给定一个二叉树, 找到该树中两个指定节点的最近公共祖先。
+
+百度百科中最近公共祖先的定义为：“对于有根树 T 的两个结点 p、q，最近公共祖先表示为一个结点 x，满足 x 是 p、q 的祖先且 x 的深度尽可能大（一个节点也可以是它自己的祖先）。”
+
+例如，给定如下二叉树:  root = [3,5,1,6,2,0,8,null,null,7,4]
+
+
+
+
+
+示例 1:
+
+输入: root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 1
+输出: 3
+解释: 节点 5 和节点 1 的最近公共祖先是节点 3。
+示例 2:
+
+输入: root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 4
+输出: 5
+解释: 节点 5 和节点 4 的最近公共祖先是节点 5。因为根据定义最近公共祖先节点可以为节点本身。
+
+
+说明:
+
+所有节点的值都是唯一的。
+p、q 为不同节点且均存在于给定的二叉树中。
+通过次数114,753提交次数176,188
+
+
+1.递归法
+
+解题思路：
+祖先的定义： 若节点 pp 在节点 rootroot 的左（右）子树中，或 p = rootp=root ，则称 rootroot 是 pp 的祖先。
+
+
+
+最近公共祖先的定义： 设节点 rootroot 为节点 p, qp,q 的某公共祖先，若其左子节点 root.leftroot.left 和右子节点 root.rightroot.right 都不是 p,qp,q 的公共祖先，则称 rootroot 是 “最近的公共祖先” 。
+
+根据以上定义，若 rootroot 是 p, qp,q 的 最近公共祖先 ，则只可能为以下情况之一：
+
+pp 和 qq 在 rootroot 的子树中，且分列 rootroot 的 异侧（即分别在左、右子树中）；
+p = rootp=root ，且 qq 在 rootroot 的左或右子树中；
+q = rootq=root ，且 pp 在 rootroot 的左或右子树中；
+
+
+考虑通过递归对二叉树进行后序遍历，当遇到节点 pp 或 qq 时返回。从底至顶回溯，当节点 p, qp,q 在节点 rootroot 的异侧时，节点 rootroot 即为最近公共祖先，则向上返回 rootroot 。
+
+递归解析：
+终止条件：
+当越过叶节点，则直接返回 nullnull ；
+当 rootroot 等于 p, qp,q ，则直接返回 rootroot ；
+递推工作：
+开启递归左子节点，返回值记为 leftleft ；
+开启递归右子节点，返回值记为 rightright ；
+返回值： 根据 leftleft 和 rightright ，可展开为四种情况；
+当 leftleft 和 rightright 同时为空 ：说明 rootroot 的左 / 右子树中都不包含 p,qp,q ，返回 nullnull ；
+当 leftleft 和 rightright 同时不为空 ：说明 p, qp,q 分列在 rootroot 的 异侧 （分别在 左 / 右子树），因此 rootroot 为最近公共祖先，返回 rootroot ；
+当 leftleft 为空 ，rightright 不为空 ：p,qp,q 都不在 rootroot 的左子树中，直接返回 rightright 。具体可分为两种情况：
+p,qp,q 其中一个在 rootroot 的 右子树 中，此时 rightright 指向 pp（假设为 pp ）；
+p,qp,q 两节点都在 rootroot 的 右子树 中，此时的 rightright 指向 最近公共祖先节点 ；
+当 leftleft 不为空 ， rightright 为空 ：与情况 3. 同理；
+观察发现， 情况 1. 可合并至 3. 和 4. 内，详见文章末尾代码。
+
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null || root == p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        if(left == null) return right;
+        if(right == null) return left;
+        return root;
+    }
+}
+情况 1. , 2. , 3. , 4. 的展开写法如下。
+
+pythonjava
+
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null || root == p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        if(left == null && right == null) return null; // 1.
+        if(left == null) return right; // 3.
+        if(right == null) return left; // 4.
+        return root; // 2. if(left != null and right != null)
+    }
+}
+
+
+
+2.hashmap方法（比较新颖）
+参考 这里 ，也很有意思，分享一下。
+
+root 节点一定是 p 节点和 q 节点的共同祖先，只不过这道题要找的是最近的共同祖先。
+
+从 root 节点出发有一条唯一的路径到达 p。
+
+从 root 节点出发也有一条唯一的路径到达 q。
+
+可以抽象成下图的样子。
+
+
+       root
+        |
+        |
+        |
+        r
+       / \
+      /   \
+     /    /
+     \    \
+      p    \
+            q
+事实上，我们要找的最近的共同祖先就是第一次出现分叉的时候，也就是上图中的 r。
+
+那么怎么找到 r 呢？
+
+我们可以把从 root 到 p 和 root 到 q 的路径找到，比如说是
+
+root -> * -> * -> r -> x -> x -> p
+
+root -> * -> * -> r -> y -> y -> y -> y -> q
+
+然后我们倒着遍历其中一条路径，然后看当前节点在不在另一条路径中，当第一次出现在的时候，这个节点就是我们要找到的最近的公共祖先了。
+
+比如倒着遍历 root 到 q 的路径。
+
+依次判断 q 在不在 root 到 p 的路径中，y 在不在？ ... r 在不在？ 发现 r 在，说明 r 就是我们要找到的节点。
+
+代码实现的话，因为我们要倒着遍历某一条路径，所以可以用 HashMap 来保存每个节点的父节点，从而可以方便的倒着遍历。
+
+另外我们要判断路径中有没有某个节点，所以我们要把这条路径的所有节点存到 HashSet 中方便判断。
+
+寻找路径的话，我们一开始肯定不知道该向左还是向右，所以我们采取遍历整个树，直到找到了 p 和 q ，然后从 p 和 q 开始，通过 hashMap 存储的每个节点的父节点，就可以倒着遍历回去确定路径。
+
+
+
+public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+    Stack<TreeNode> stack = new Stack<>();
+    HashMap<TreeNode, TreeNode> parent = new HashMap<>();
+    stack.push(root);
+    parent.put(root, null);
+    //将遍历过程中每个节点的父节点保存起来
+    while (!parent.containsKey(p) || !parent.containsKey(q)) {
+        TreeNode cur = stack.pop();
+        if (cur.left != null) {
+            stack.push(cur.left);
+            parent.put(cur.left, cur);
+        }
+        if (cur.right != null) {
+            stack.push(cur.right);
+            parent.put(cur.right, cur);
+        }
+    }
+    HashSet<TreeNode> path = new HashSet<>();
+    // 倒着还原 p 的路径，并将每个节点加入到 set 中
+    while (p != null) {
+        path.add(p);
+        p = parent.get(p);
+    }
+
+    // 倒着遍历 q 的路径，判断是否在 p 的路径中
+    while (q != null) {
+        if (path.contains(q)) {
+            break;
+        }
+        q = parent.get(q);
+    }
+    return q;
+}
+
+
+3.中序遍历法（很慢）
+刚做的 235 题 是这个题的子问题， 235 题是让我们在二叉搜索树中找两个节点的最近的共同祖先。当时分了三种情况。
+
+如果给定的两个节点的值都小于根节点的值，那么最近的共同祖先一定在左子树
+如果给定的两个节点的值都大于根节点的值，那么最近的共同祖先一定在右子树
+如果一个大于等于、一个小于等于根节点的值，那么当前根节点就是最近的共同祖先了
+通过确定两个节点的位置，然后再用递归去解决问题。
+
+之前是二叉搜索树，所以通过和根节点的值进行比较就能知道节点的是在左子树和右子树了，这道题的话我们只有通过遍历去寻找给定的节点，从而确定节点是在左子树还是右子树了。
+
+遍历采用 94 题 的中序遍历，栈的形式。
+
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null || q==root || p== root){
+            return root;
+        }
+        boolean pleft = false;
+        boolean qleft = false;
+        Deque<TreeNode> stack = new LinkedList<TreeNode>();
+        TreeNode cur = root.left;
+        while(cur!=null || !stack.isEmpty()){
+            while(cur!=null){
+                stack.push(cur);
+                cur = cur.left;
+            }
+            cur = stack.pop();
+            if(cur.val == p.val){
+                pleft = true;
+            }
+            if(cur.val == q.val){
+                qleft = true;
+            }
+            cur = cur.right;
+        }
+        if(pleft && qleft){
+            return lowestCommonAncestor(root.left,p,q);
+        }else if(!pleft &&!qleft){
+            return lowestCommonAncestor(root.right,p,q);
+        }
+        return root;
+
+    }
+}
